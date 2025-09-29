@@ -5,7 +5,6 @@
 
 using namespace std;
 
-// ===== Паттерн НАБЛЮДАТЕЛЬ (Observer) =====
 enum class EventType {
     TreasureCollected,
     TrapTriggered
@@ -33,16 +32,15 @@ public:
     }
 };
 
-// ===== Паттерн СИНГЛТОН (Singleton) =====
 class GameManager : public Observer {
 private:
     static GameManager* instance;
     int score;
-    bool gameOver;
+    bool game_over;
     int level;
-    int treasuresToWin;
+    int treasures_to_win;
 
-    GameManager() : score(0), gameOver(false), level(1), treasuresToWin(3) {}
+    GameManager() : score(0), game_over(false), level(1), treasures_to_win(3) {}
 
 public:
     GameManager(const GameManager&) = delete;
@@ -57,31 +55,31 @@ public:
 
     void init() {
         score = 0;
-        gameOver = false;
+        game_over = false;
         level = 1;
-        treasuresToWin = 3;
+        treasures_to_win = 3;
     }
 
-    bool isGameOver() const { return gameOver; }
+    bool isGameOver() const { return game_over; }
     int getScore() const { return score; }
     int getLevel() const { return level; }
-    int getTreasuresToWin() const { return treasuresToWin; }
+    int getTreasuresToWin() const { return treasures_to_win; }
 
     void addScore(int points) {
         score += points;
-        if (score >= treasuresToWin) {
+        if (score >= treasures_to_win) {
             levelUp();
         }
     }
 
     void levelUp() {
         level++;
-        treasuresToWin += 2;
+        treasures_to_win += 2;
         score = 0;
     }
 
     void endGame() {
-        gameOver = true;
+        game_over = true;
     }
 
     void onNotify(EventType event) override {
@@ -98,15 +96,15 @@ public:
 
 GameManager* GameManager::instance = nullptr;
 
-// Базовый класс игровых объектов
 class GameObject {
 protected:
-    int x, y;
+    int x;
+    int y;
     char symbol;
     bool active;
 
 public:
-    GameObject(int posX, int posY, char sym) : x(posX), y(posY), symbol(sym), active(true) {}
+    GameObject(int pos_x, int pos_y, char sym) : x(pos_x), y(pos_y), symbol(sym), active(true) {}
     virtual ~GameObject() = default;
 
     int getX() const { return x; }
@@ -116,7 +114,6 @@ public:
     void setActive(bool act) { active = act; }
 };
 
-// ===== Паттерн ФАБРИКА (Factory) =====
 class GameObjectFactory {
 private:
     random_device rd;
@@ -151,29 +148,29 @@ public:
     }
 };
 
-// Класс игрока
 class Player : public GameObject, public Subject {
 private:
-    int fieldWidth, fieldHeight;
+    int field_width;
+    int field_height;
 
 public:
-    Player(int width, int height) : GameObject(width/2, height/2, '@'), fieldWidth(width), fieldHeight(height) {}
+    Player(int width, int height) : GameObject(width/2, height/2, '@'), field_width(width), field_height(height) {}
 
     void move(int dx, int dy) {
-        int newX = x + dx;
-        int newY = y + dy;
+        int new_x = x + dx;
+        int new_y = y + dy;
         
-        if (newX >= 0 && newX < fieldWidth && newY >= 0 && newY < fieldHeight) {
-            x = newX;
-            y = newY;
+        if (new_x >= 0 && new_x < field_width && new_y >= 0 && new_y < field_height) {
+            x = new_x;
+            y = new_y;
         }
     }
 };
 
-// Класс игрового поля
 class GameField {
 private:
-    int width, height;
+    int width;
+    int height;
     vector<unique_ptr<GameObject>> objects;
     GameObjectFactory factory;
 
@@ -218,14 +215,15 @@ public:
     void addTrap() {
         random_device rd;
         mt19937 gen(rd());
-        uniform_int_distribution<> xDist(0, width-1);
-        uniform_int_distribution<> yDist(0, height-1);
+        uniform_int_distribution<> x_dist(0, width-1);
+        uniform_int_distribution<> y_dist(0, height-1);
         
-        int x, y;
+        int x;
+        int y;
         int attempts = 0;
         do {
-            x = xDist(gen);
-            y = yDist(gen);
+            x = x_dist(gen);
+            y = y_dist(gen);
             attempts++;
         } while (getObjectAt(x, y) != nullptr && attempts < 50);
         
@@ -234,18 +232,16 @@ public:
         }
     }
 
-    void draw(int playerX, int playerY) const {
-        // Верхняя граница
+    void draw(int player_x, int player_y) const {
         cout << "+";
         for (int x = 0; x < width * 2 + 1; x++) cout << "-";
         cout << "+\n";
         
-        // Поле
         for (int y = 0; y < height; y++) {
             cout << "| ";
             for (int x = 0; x < width; x++) {
-                if (x == playerX && y == playerY) {
-                    cout << "@ "; // Игрок
+                if (x == player_x && y == player_y) {
+                    cout << "@ ";
                 } else {
                     bool found = false;
                     for (auto& obj : objects) {
@@ -263,18 +259,16 @@ public:
             cout << "|\n";
         }
         
-        // Нижняя граница
         cout << "+";
         for (int x = 0; x < width * 2 + 1; x++) cout << "-";
         cout << "+\n";
     }
 };
 
-// Простая функция для получения ввода
 char getInput() {
     char c;
     cin >> c;
-    cin.ignore(); // очищаем буфер
+    cin.ignore();
     return c;
 }
 
@@ -282,11 +276,11 @@ int main() {
     GameManager& game = GameManager::getInstance();
     game.init();
 
-    const int FIELD_WIDTH = 10;
-    const int FIELD_HEIGHT = 6;
+    const int field_width = 10;
+    const int field_height = 6;
     
-    GameField field(FIELD_WIDTH, FIELD_HEIGHT);
-    Player player(FIELD_WIDTH, FIELD_HEIGHT);
+    GameField field(field_width, field_height);
+    Player player(field_width, field_height);
     player.addObserver(&game);
 
     cout << "=== ОХОТНИК ЗА СОКРОВИЩАМИ ===\n";
@@ -296,7 +290,6 @@ int main() {
     getInput();
 
     while (!game.isGameOver()) {
-        // Отрисовка
         cout << "\n\n";
         field.draw(player.getX(), player.getY());
         
@@ -321,14 +314,14 @@ int main() {
             default: cout << "Неверная команда!\n"; continue;
         }
 
-        GameObject* collidedObject = field.getObjectAt(player.getX(), player.getY());
-        if (collidedObject) {
-            if (collidedObject->getSymbol() == 'T') {
+        GameObject* collided_object = field.getObjectAt(player.getX(), player.getY());
+        if (collided_object) {
+            if (collided_object->getSymbol() == 'T') {
                 player.notify(EventType::TreasureCollected);
-                field.removeObject(collidedObject);
+                field.removeObject(collided_object);
                 field.addTrap();
                 cout << "Найдено сокровище! Появилась новая ловушка.\n";
-            } else if (collidedObject->getSymbol() == 'X') {
+            } else if (collided_object->getSymbol() == 'X') {
                 player.notify(EventType::TrapTriggered);
                 cout << "Вы наступили на ловушку!\n";
             }
